@@ -3,6 +3,9 @@ package user.biblio4.model;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 
 @Entity
 @Table(name = "level_word", 
@@ -13,7 +16,15 @@ import java.time.LocalDateTime;
 @Builder
 public class LevelWord {
     
-    public Long getId() {
+    public List<Translation> getTranslations() {
+		return translations;
+	}
+
+	public void setTranslations(List<Translation> translations) {
+		this.translations = translations;
+	}
+
+	public Long getId() {
 		return id;
 	}
 
@@ -68,7 +79,9 @@ public class LevelWord {
 	public void setCreatedAt(LocalDateTime createdAt) {
 		this.createdAt = createdAt;
 	}
-
+	
+    @OneToMany(mappedBy = "levelWord", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Translation> translations;
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

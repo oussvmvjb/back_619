@@ -1,5 +1,6 @@
 package user.biblio4.controller;
 
+import user.biblio4.model.QuizQuestion;
 import user.biblio4.service.QuizService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +38,35 @@ public class QuizController {
             error.put("success", false);
             error.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(error);
+        }
+    }
+    @PostMapping("/create-image-quiz")
+    public ResponseEntity<?> createImageQuiz(
+            @RequestParam Integer levelNumber,
+            @RequestParam(defaultValue = "ar") String language) {
+
+        try {
+            QuizQuestion quiz = quizService.createImageQuiz(levelNumber, language);
+
+            // ✅ تعديل questionText حسب اللغة
+            if ("en".equalsIgnoreCase(language)) {
+                quiz.setQuestionText("Choose the correct word for the image");
+            } else if ("fr".equalsIgnoreCase(language)) {
+                quiz.setQuestionText("Choisissez le mot correct pour l'image");
+            } else {
+                quiz.setQuestionText("اختر الكلمة الصحيحة للصورة");
+            }
+
+            return ResponseEntity.ok(quiz);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", e.getMessage()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "حدث خطأ أثناء إنشاء السؤال"
+            ));
         }
     }
 

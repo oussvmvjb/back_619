@@ -24,6 +24,12 @@ public interface UserProgressRepository extends JpaRepository<UserProgress, Long
     List<UserProgress> findByUserIdAndLastAttemptAfter(@Param("userId") Long userId, 
                                                       @Param("date") LocalDateTime date);
     
+    
+
+        Optional<UserProgress> findTopByUserIdOrderByLevelNumberDesc(Long userId);
+
+    
+
     // Trouver les niveaux complétés
     List<UserProgress> findByUserIdAndQuizPassedTrue(Long userId);
     

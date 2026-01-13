@@ -3,6 +3,8 @@ package user.biblio4.service;
 import user.biblio4.model.Translation;
 import user.biblio4.model.LevelWord;
 import user.biblio4.repository.TranslationRepository;
+import user.biblio4.repository.UserRepository;
+import user.biblio4.repository.UserRewardProgressRepository;
 import user.biblio4.repository.LevelWordRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,9 +19,15 @@ import java.util.stream.Collectors;
 @Slf4j
 public class TranslationService {
     
-    private final TranslationRepository translationRepository = null;
-    private final LevelWordRepository levelWordRepository = null;
-    
+	 private final TranslationRepository translationRepository;
+	    private final LevelWordRepository levelWordRepository;
+	    public TranslationService(
+	            TranslationRepository translationRepository,
+	            LevelWordRepository levelWordRepository
+	    ) {
+	        this.translationRepository = translationRepository;
+	        this.levelWordRepository = levelWordRepository;
+	    }
     @Transactional(readOnly = true)
     public Map<String, Object> getWordTranslation(String wordKey, String language) {
         

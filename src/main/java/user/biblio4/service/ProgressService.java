@@ -6,6 +6,8 @@ import user.biblio4.repository.UserProgressRepository;
 import user.biblio4.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,10 +20,19 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ProgressService {
 
-    private final UserProgressRepository userProgressRepository;
+	private final UserProgressRepository userProgressRepository;
     private final UserRepository userRepository;
     private final RewardService rewardService;
 
+    public ProgressService(
+            UserProgressRepository userProgressRepository,
+            UserRepository userRepository,
+            RewardService rewardService
+    ) {
+        this.userProgressRepository = userProgressRepository;
+        this.userRepository = userRepository;
+        this.rewardService = rewardService;
+    }
     /**
      * Récupérer les statistiques hebdomadaires
      */
@@ -68,6 +79,11 @@ public class ProgressService {
         stats.put("averageDailyWords", wordsLearnedThisWeek > 0 ? wordsLearnedThisWeek / 7 : 0);
 
         return stats;
+    }
+  
+
+    public Optional<UserProgress> findLastCompletedLevel(Long userId) {
+        return userProgressRepository.findTopByUserIdOrderByLevelNumberDesc(userId);
     }
 
     /**

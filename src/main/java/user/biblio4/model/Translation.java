@@ -67,7 +67,9 @@ public class Translation {
 	public void setDescription(String description) {
 		this.description = description;
 	}
-
+	@ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "level_word_id")
+    private LevelWord levelWord; // This field must exist!
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

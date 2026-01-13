@@ -1,5 +1,6 @@
 package user.biblio4.controller;
 
+import user.biblio4.model.UserProgress;
 import user.biblio4.service.LevelService;
 import user.biblio4.service.ProgressService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/levels")
@@ -91,12 +93,10 @@ public class LevelController {
     @PostMapping("/unlock-next")
     public ResponseEntity<Map<String, Object>> unlockNextLevel(@RequestParam Long userId) {
         try {
-            Map<String, Object> result = levelService.unlockNextLevel(userId);
-
+            Map<String, Object> result = unlockNextLevelLogic(userId);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("result", result);
-
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, Object> error = new HashMap<>();
@@ -105,6 +105,27 @@ public class LevelController {
             return ResponseEntity.badRequest().body(error);
         }
     }
+    private Map<String, Object> unlockNextLevelLogic(Long userId) {
+        // الحصول على آخر مستوى مكتمل
+        Optional<UserProgress> lastCompleted = progressService.findLastCompletedLevel(userId);
+
+        Map<String, Object> result = new HashMap<>();
+
+        if (lastCompleted.isEmpty()) {
+            // المستخدم جديد، افتح المستوى 1
+            result.put("nextLevel", 1);
+            result.put("unlocked", true);
+        } else {
+            // المستخدم لديه مستوى مكتمل
+            int nextLevel = lastCompleted.get().getLevelNumber() + 1;
+            levelService.unlockSpecificLevel(userId, nextLevel); // دالة لفتح المستوى التالي
+            result.put("nextLevel", nextLevel);
+            result.put("unlocked", true);
+        }
+
+        return result;
+    }
+
 
     @GetMapping("/user/stats")
     public ResponseEntity<Map<String, Object>> getUserStats(@RequestParam Long userId) {

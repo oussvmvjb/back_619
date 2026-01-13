@@ -16,10 +16,16 @@ import java.util.*;
 @RequiredArgsConstructor
 @Slf4j
 public class RewardService {
-
-    private final UserRepository userRepository;
+	private final UserRepository userRepository;
     private final UserRewardProgressRepository rewardProgressRepository;
-
+   
+    public RewardService(
+            UserRepository userRepository,
+            UserRewardProgressRepository rewardProgressRepository
+    ) {
+        this.userRepository = userRepository;
+        this.rewardProgressRepository = rewardProgressRepository;
+    }
     /**
      * Obtenir ou créer la progression de récompense d'un utilisateur
      */

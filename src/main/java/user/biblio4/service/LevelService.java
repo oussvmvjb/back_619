@@ -16,12 +16,25 @@ import java.util.stream.Collectors;
 @Slf4j
 public class LevelService {
 
-    private final LevelWordRepository levelWordRepository;
-    private final TranslationRepository translationRepository;
-    private final UserProgressRepository userProgressRepository;
-    private final UserRepository userRepository;
-    private final RewardService rewardService;
-
+	
+	    private final LevelWordRepository levelWordRepository;
+	    private final TranslationRepository translationRepository;
+	    private final UserProgressRepository userProgressRepository;
+	    private final UserRepository userRepository;
+	    private final RewardService rewardService;
+	    public LevelService(
+	            LevelWordRepository levelWordRepository,
+	            TranslationRepository translationRepository,
+	            UserProgressRepository userProgressRepository,
+	            UserRepository userRepository,
+	            RewardService rewardService
+	    ) {
+	        this.levelWordRepository = levelWordRepository;
+	        this.translationRepository = translationRepository;
+	        this.userProgressRepository = userProgressRepository;
+	        this.userRepository = userRepository;
+	        this.rewardService = rewardService;
+	    }
     @Transactional(readOnly = true)
     public Map<String, Object> getLevelWithProgress(Long userId, Integer levelNumber, String language) {
         // Récupérer les mots du niveau

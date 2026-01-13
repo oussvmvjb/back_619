@@ -1,11 +1,15 @@
 package user.biblio4.service;
 
+import user.biblio4.model.LevelWord;
 import user.biblio4.model.QuizQuestion;
+import user.biblio4.model.Translation;
 import user.biblio4.model.UserProgress;
 import user.biblio4.model.User;
+import user.biblio4.repository.LevelWordRepository;
 import user.biblio4.repository.QuizQuestionRepository;
 import user.biblio4.repository.UserProgressRepository;
 import user.biblio4.repository.UserRepository;
+import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,16 +18,118 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Builder
 public class QuizService {
-
     private final QuizQuestionRepository quizQuestionRepository;
     private final UserProgressRepository userProgressRepository;
     private final UserRepository userRepository;
     private final RewardService rewardService;
+    private final LevelWordRepository levelWordRepository;
+    private static final Logger log = LoggerFactory.getLogger(QuizService.class);
+
+    public QuizService(
+            QuizQuestionRepository quizQuestionRepository,
+            UserProgressRepository userProgressRepository,
+            UserRepository userRepository,
+            RewardService rewardService,
+            LevelWordRepository levelWordRepository
+    ) {
+        this.quizQuestionRepository = quizQuestionRepository;
+        this.userProgressRepository = userProgressRepository;
+        this.userRepository = userRepository;
+        this.rewardService = rewardService;
+        this.levelWordRepository = levelWordRepository;
+    }
+
+    /**
+     * إنشاء سؤال Quiz عشوائي على مستوى معين
+     */
+    @Transactional
+    public QuizQuestion createImageQuiz(Integer levelNumber, String language) {
+        // جلب كلمات المستوى
+        List<LevelWord> words = levelWordRepository.findByLevelNumberOrderByDisplayOrderAsc(levelNumber);
+        if (words.size() < 3) {
+            throw new RuntimeException("المستوى يحتاج على الأقل 3 كلمات لإنشاء Quiz");
+        }
+
+        // اختيار 3 كلمات مختلفة عشوائياً
+        Collections.shuffle(words);
+        List<LevelWord> selectedWords = words.subList(0, 3);
+
+        // اختيار واحدة لتكون الإجابة الصحيحة
+        Random rand = new Random();
+        LevelWord correctWord = selectedWords.get(rand.nextInt(selectedWords.size()));
+
+        // ترجمة الإجابة الصحيحة حسب اللغة
+        Optional<Translation> correctTranslation = correctWord.getTranslations().stream()
+                .filter(t -> t.getLanguageCode().equals(language))
+                .findFirst();
+
+        String correctText;
+        String imageUrl = null;
+        if (correctTranslation.isPresent()) {
+            correctText = correctTranslation.get().getText();
+            imageUrl = correctTranslation.get().getGifUrl();
+        } else {
+            // ⚠️ لا توجد ترجمة للغة المطلوبة
+            correctText = correctWord.getWordKey(); // fallback
+            log.warn("No translation found for correct word '{}' in language '{}'", correctWord.getWordKey(), language);
+        }
+
+        // إعداد الخيارات مترجمة حسب اللغة
+        List<String> options = new ArrayList<>();
+        for (LevelWord w : selectedWords) {
+            Optional<Translation> tr = w.getTranslations().stream()
+                    .filter(t -> t.getLanguageCode().equals(language))
+                    .findFirst();
+            if (tr.isPresent()) {
+                options.add(tr.get().getText());
+            } else {
+                // ⚠️ لا توجد ترجمة للغة المطلوبة
+                options.add(w.getWordKey()); // fallback
+                log.warn("No translation found for word '{}' in language '{}'", w.getWordKey(), language);
+            }
+        }
+
+        // خلط الخيارات
+        Collections.shuffle(options);
+
+        // إنشاء QuizQuestion بدون حفظ في DB
+        QuizQuestion quiz = new QuizQuestion();
+        quiz.setLevelNumber(levelNumber);
+        quiz.setQuestionType("image");
+
+        // questionText حسب اللغة
+        switch (language.toLowerCase()) {
+            case "en":
+                quiz.setQuestionText("Choose the correct word for the image");
+                break;
+            case "fr":
+                quiz.setQuestionText("Choisissez le mot correct pour l'image");
+                break;
+            case "ar":
+            default:
+                quiz.setQuestionText("اختر الكلمة الصحيحة للصورة");
+                break;
+        }
+
+        quiz.setCorrectAnswer(correctText);  // الإجابة الصحيحة المترجمة
+        quiz.setGifUrl(imageUrl);
+        quiz.setPoints(20);
+        quiz.setTimeLimit(60);
+        quiz.setRequiredScore(70);
+        quiz.setOptions(options);           // الخيارات مترجمة
+
+        return quizQuestionRepository.save(quiz);
+  // ❌ لا تحفظ في DB
+    }
+
+
 
     /**
      * Démarrer un quiz pour un niveau
@@ -45,7 +151,6 @@ public class QuizService {
         // }
 
         // Récupérer les questions du quiz (5 questions aléatoires)
-        // Note: Vous devez créer cette méthode dans le repository
         List<QuizQuestion> questions = getRandomQuestionsByLevel(levelNumber, 5);
 
         if (questions.isEmpty()) {
@@ -361,7 +466,6 @@ public class QuizService {
         if (progress.getBestScore() == null || score > progress.getBestScore()) {
             progress.setBestScore(score);
             userProgressRepository.save(progress);
-
         }
     }
 }
